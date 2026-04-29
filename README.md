@@ -1,4 +1,6 @@
-# Bioinformatics Sequence Alignment Tool (MERN)
+# DNA-Sequence-Alignment (Coding Skills DP)
+
+Project assigned by Coding Skills 2
 
 This project demonstrates how **Dynamic Programming (DP)** solves sequence alignment efficiently, and why brute-force recursion becomes infeasible.
 
