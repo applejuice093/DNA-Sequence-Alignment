@@ -1,0 +1,19 @@
+{
+  "name": "sequence-dp-monorepo",
+  "private": true,
+  "scripts": {
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "dev": "node scripts/stop-dev-ports.js && concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:parallel": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:fresh": "npm run dev",
+    "dev:node": "node scripts/dev.js",
+    "stop": "node scripts/stop-dev-ports.js",
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "push": "node scripts/autopush.js",
+    "push:msg": "node scripts/autopush.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
