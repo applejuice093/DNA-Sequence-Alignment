@@ -1,6 +1,6 @@
+// Fallback dev runner (`npm run dev:node`) for machines where `concurrently`
+// is not installed: starts the server and client and prefixes their output.
 const { spawn } = require("child_process");
-
-const isWindows = process.platform === "win32";
 
 function run(name, command) {
   let child;
@@ -36,8 +36,9 @@ function run(name, command) {
   return child;
 }
 
-const serverCommand = isWindows ? "cd server && npm run dev" : "cd server && npm run dev";
-const clientCommand = isWindows ? "cd client && npm run dev" : "cd client && npm run dev";
+// `cd x && ...` works in both cmd.exe and POSIX shells, so no per-OS variants are needed.
+const serverCommand = "cd server && npm run dev";
+const clientCommand = "cd client && npm run dev";
 
 const children = [run("server", serverCommand), run("client", clientCommand)].filter(Boolean);
 

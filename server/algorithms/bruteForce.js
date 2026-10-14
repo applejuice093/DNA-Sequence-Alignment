@@ -1,13 +1,29 @@
-function sanitizeSeq(seq) {
-  return String(seq || "").toUpperCase().trim();
-}
+const { sanitizeSeq } = require("./shared");
 
+// The recursion tree grows roughly as 3^(n+m); beyond 6x6 the tree returned to
+// the client becomes too large to render or even serialise comfortably.
+const MAX_BRUTE_FORCE_LENGTH = 6;
+
+/**
+ * Naive recursive global alignment, used to show why DP is needed.
+ *
+ * solve(i, j) returns the best score for aligning the suffixes A[i..] and B[j..]
+ * by trying the same three moves as Needleman–Wunsch (diag / up / left) with no
+ * memoisation. It therefore returns the same optimal score as alignGlobal(), but
+ * revisits the same (i, j) subproblem many times.
+ *
+ * Returned counters:
+ *   - callCount:      total number of solve() calls
+ *   - recomputations: calls whose (i, j) had already been solved before —
+ *                     exactly the work a DP table would have saved
+ *   - recursionTree:  every call as a node ({ id, i, j, value, children, isDuplicate })
+ */
 function bruteForceDemo(seqA, seqB, match, mismatch, gap) {
   const a = sanitizeSeq(seqA);
   const b = sanitizeSeq(seqB);
 
-  if (a.length > 6 || b.length > 6) {
-    throw new Error("Brute force demo supports sequences up to length 6.");
+  if (a.length > MAX_BRUTE_FORCE_LENGTH || b.length > MAX_BRUTE_FORCE_LENGTH) {
+    throw new Error(`Brute force demo supports sequences up to length ${MAX_BRUTE_FORCE_LENGTH}.`);
   }
 
   let callCount = 0;
@@ -74,4 +90,4 @@ function bruteForceDemo(seqA, seqB, match, mismatch, gap) {
   };
 }
 
-module.exports = { bruteForceDemo };
+module.exports = { bruteForceDemo, MAX_BRUTE_FORCE_LENGTH };
