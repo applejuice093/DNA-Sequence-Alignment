@@ -1,31 +1,4 @@
-function sanitizeSeq(seq) {
-  return String(seq || "").toUpperCase().trim();
-}
-
-function buildMetrics(alignmentA, alignmentB) {
-  const length = alignmentA.length;
-  if (length === 0) {
-    return { similarity: 0, identity: 0 };
-  }
-
-  let matches = 0;
-  let nonGapComparisons = 0;
-
-  for (let k = 0; k < length; k += 1) {
-    const a = alignmentA[k];
-    const b = alignmentB[k];
-    if (a === b && a !== "-" && b !== "-") {
-      matches += 1;
-    }
-    if (a !== "-" && b !== "-") {
-      nonGapComparisons += 1;
-    }
-  }
-
-  const similarity = (matches / length) * 100;
-  const identity = nonGapComparisons === 0 ? 0 : (matches / nonGapComparisons) * 100;
-  return { similarity, identity };
-}
+const { sanitizeSeq, buildMetrics } = require("./shared");
 
 function alignLocal(seqA, seqB, match, mismatch, gap) {
   const a = sanitizeSeq(seqA);

@@ -1,6 +1,4 @@
-function sanitizeSeq(seq) {
-  return String(seq || "").toUpperCase().trim();
-}
+const { sanitizeSeq } = require("./shared");
 
 function bruteForceDemo(seqA, seqB, match, mismatch, gap) {
   const a = sanitizeSeq(seqA);
