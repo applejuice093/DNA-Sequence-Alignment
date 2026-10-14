@@ -9,8 +9,10 @@ const alignmentSchema = new mongoose.Schema(
     mismatch: { type: Number, required: true },
     gap: { type: Number, required: true },
     score: { type: Number, required: true },
-    alignmentA: { type: String, required: true },
-    alignmentB: { type: String, required: true },
+    // Not `required`: Mongoose treats "" as missing, but a local alignment with
+    // no positive-scoring region (e.g. "AAA" vs "TTT") legitimately yields "".
+    alignmentA: { type: String, default: "" },
+    alignmentB: { type: String, default: "" },
     similarity: { type: Number, required: true },
     identity: { type: Number, required: true },
   },
