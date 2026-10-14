@@ -1,45 +1,24 @@
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
 const http = require("http");
+const mongoose = require("mongoose");
 require("dotenv").config();
 
-const alignRoutes = require("./routes/align.routes");
-const historyRoutes = require("./routes/history.routes");
-
-const app = express();
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      const allowedPattern = /^http:\/\/(localhost|127\.0\.0\.1):\d+$/;
-      if (!origin || allowedPattern.test(origin)) {
-        callback(null, true);
-        return;
-      }
-      callback(new Error("CORS not allowed for this origin"));
-    },
-    credentials: true,
-  })
-);
-app.use(express.json());
-
-app.use("/api", alignRoutes);
-app.use("/api", historyRoutes);
-
-app.get("/", (_req, res) => {
-  res.json({ message: HEALTH_MESSAGE });
-});
+const { createApp, HEALTH_MESSAGE } = require("./app");
 
 const PORT = Number(process.env.PORT) || 5000;
 const MONGO_URI = process.env.MONGO_URI;
-const HEALTH_MESSAGE = "Bioinformatics Sequence Alignment API is running.";
 
 if (!MONGO_URI) {
   // Fail fast if DB config is missing.
-  throw new Error("MONGO_URI is missing. Add it to your .env file.");
+  throw new Error("MONGO_URI is missing. Copy server/.env.example to server/.env and set it.");
 }
 
+const app = createApp();
+
+/**
+ * When the port is taken, ask whoever owns it for GET /. If it answers with our
+ * health message, another copy of this API is already running and we can exit
+ * cleanly instead of failing (common when `npm run dev` is started twice).
+ */
 function checkExistingApi(port) {
   return new Promise((resolve) => {
     const req = http.get(`http://127.0.0.1:${port}/`, (res) => {
