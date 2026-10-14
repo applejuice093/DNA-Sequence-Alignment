@@ -1,5 +1,30 @@
 const { sanitizeSeq, buildMetrics } = require("./shared");
 
+/**
+ * Needleman–Wunsch global alignment.
+ *
+ * dpTable[i][j] holds the best score for aligning the first i characters of A
+ * with the first j characters of B. Each cell is filled from three neighbours:
+ *
+ *   diag = dpTable[i-1][j-1] + (A[i-1] === B[j-1] ? match : mismatch)
+ *   up   = dpTable[i-1][j]   + gap   (A[i-1] aligned against a gap in B)
+ *   left = dpTable[i][j-1]   + gap   (B[j-1] aligned against a gap in A)
+ *
+ * The answer is dpTable[n][m]. Ties are broken in the order diag > up > left,
+ * so when several optimal alignments exist, traceback (which walks from the
+ * end) prefers match/mismatch columns and pushes gaps toward the start.
+ *
+ * Time and space are both O(n * m).
+ *
+ * @param {string} seqA
+ * @param {string} seqB
+ * @param {number} match    score added for identical characters (usually > 0)
+ * @param {number} mismatch score added for different characters (usually < 0)
+ * @param {number} gap      linear gap penalty per gap character (usually < 0)
+ * @returns {{score:number, alignmentA:string, alignmentB:string, dpTable:number[][],
+ *   traceTable:(string|null)[][], steps:object[], similarity:number, identity:number}}
+ *   `steps` lists every filled cell in row-major order for the client animation.
+ */
 function alignGlobal(seqA, seqB, match, mismatch, gap) {
   const a = sanitizeSeq(seqA);
   const b = sanitizeSeq(seqB);
@@ -30,6 +55,7 @@ function alignGlobal(seqA, seqB, match, mismatch, gap) {
       const up = dpTable[i - 1][j] + gap;
       const left = dpTable[i][j - 1] + gap;
 
+      // Strict ">" comparisons keep the earlier direction on ties (diag > up > left).
       let chosen = "diag";
       let best = diag;
 
@@ -49,6 +75,7 @@ function alignGlobal(seqA, seqB, match, mismatch, gap) {
   }
 
   // Trace back from bottom-right to top-left to reconstruct one optimal global alignment.
+  // Row 0 and column 0 always point "left"/"up", so the loop is guaranteed to reach (0, 0).
   let i = a.length;
   let j = b.length;
   let alignmentA = "";
