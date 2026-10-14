@@ -22,7 +22,9 @@ function createApp() {
           callback(null, true);
           return;
         }
-        callback(new Error("CORS not allowed for this origin"));
+        const error = new Error("CORS not allowed for this origin");
+        error.status = 403;
+        callback(error);
       },
       credentials: true,
     })
@@ -34,6 +36,25 @@ function createApp() {
 
   app.get("/", (_req, res) => {
     res.json({ message: HEALTH_MESSAGE });
+  });
+
+  // The client always calls response.json(), so unknown routes and errors must
+  // answer with JSON rather than Express's default HTML page.
+  app.use((req, res) => {
+    res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
+  });
+
+  // eslint-disable-next-line no-unused-vars -- Express needs the 4-argument signature.
+  app.use((error, _req, res, _next) => {
+    if (error.type === "entity.parse.failed") {
+      res.status(400).json({ message: "Request body is not valid JSON." });
+      return;
+    }
+    const status = Number.isInteger(error.status) && error.status >= 400 ? error.status : 500;
+    if (status >= 500) {
+      console.error(error);
+    }
+    res.status(status).json({ message: status >= 500 ? "Internal server error." : error.message });
   });
 
   return app;
