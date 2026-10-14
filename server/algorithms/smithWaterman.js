@@ -1,5 +1,30 @@
 const { sanitizeSeq, buildMetrics } = require("./shared");
 
+/**
+ * Smith–Waterman local alignment.
+ *
+ * Same recurrence as Needleman–Wunsch, with two differences:
+ *
+ *   1. Every cell is clamped at 0: dpTable[i][j] = max(0, diag, up, left).
+ *      A 0 means "start a fresh alignment here", so poorly matching prefixes
+ *      are discarded instead of dragging the score down.
+ *   2. Row 0 and column 0 stay 0 (no leading gap penalties), and the result is
+ *      the single highest cell anywhere in the table, not the bottom-right one.
+ *
+ * Traceback starts at that highest cell and stops at the first 0, yielding the
+ * best-scoring pair of substrings. If no cell is positive (e.g. "AAA" vs
+ * "TTT"), the score is 0 and both aligned strings are empty.
+ *
+ * In traceTable a null entry marks a 0-cell; the matching entry in `steps`
+ * uses "stop" so the client can show where local paths restart.
+ *
+ * @param {string} seqA
+ * @param {string} seqB
+ * @param {number} match
+ * @param {number} mismatch
+ * @param {number} gap
+ * @returns same shape as alignGlobal()
+ */
 function alignLocal(seqA, seqB, match, mismatch, gap) {
   const a = sanitizeSeq(seqA);
   const b = sanitizeSeq(seqB);
@@ -43,6 +68,7 @@ function alignLocal(seqA, seqB, match, mismatch, gap) {
       traceTable[i][j] = best === 0 ? null : chosen;
       steps.push({ i, j, diag, up, left, chosen: best === 0 ? "stop" : chosen });
 
+      // Strict ">" keeps the first maximum found in row-major order.
       if (best > maxScore) {
         maxScore = best;
         maxI = i;
