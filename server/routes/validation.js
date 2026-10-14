@@ -28,4 +28,29 @@ function readSequences(body) {
   return { seqA, seqB, error: null };
 }
 
-module.exports = { readSequences, VALID_SEQUENCE, MAX_SEQUENCE_LENGTH };
+const DEFAULT_SCORING = { match: 1, mismatch: -1, gap: -2 };
+
+/**
+ * Read match/mismatch/gap from the body. Missing values fall back to the
+ * defaults; values that are present but not finite numbers are an error
+ * rather than being silently replaced.
+ * @returns {{ scoring: {match:number, mismatch:number, gap:number}, error: string | null }}
+ */
+function readScoring(body) {
+  const scoring = {};
+  for (const key of Object.keys(DEFAULT_SCORING)) {
+    const value = body[key];
+    if (value === undefined || value === null || value === "") {
+      scoring[key] = DEFAULT_SCORING[key];
+      continue;
+    }
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+      return { scoring, error: `${key} must be a number.` };
+    }
+    scoring[key] = parsed;
+  }
+  return { scoring, error: null };
+}
+
+module.exports = { readSequences, readScoring, DEFAULT_SCORING, VALID_SEQUENCE, MAX_SEQUENCE_LENGTH };

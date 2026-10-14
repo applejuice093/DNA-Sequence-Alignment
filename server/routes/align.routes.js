@@ -3,26 +3,20 @@ const Alignment = require("../models/alignment.model");
 const { alignGlobal } = require("../algorithms/needlemanWunsch");
 const { alignLocal } = require("../algorithms/smithWaterman");
 const { bruteForceDemo } = require("../algorithms/bruteForce");
-const { readSequences } = require("./validation");
+const { readSequences, readScoring } = require("./validation");
 
 const router = express.Router();
 
-function parseNumber(value, fallback) {
-  if (value === undefined || value === null || value === "") return fallback;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
 router.post("/align", async (req, res) => {
   try {
-    const { seqA, seqB, error } = readSequences(req.body || {});
-    const algorithm = req.body.algorithm;
-    const match = parseNumber(req.body.match, 1);
-    const mismatch = parseNumber(req.body.mismatch, -1);
-    const gap = parseNumber(req.body.gap, -2);
+    const body = req.body || {};
+    const { seqA, seqB, error } = readSequences(body);
+    const { algorithm } = body;
+    const { scoring, error: scoringError } = readScoring(body);
+    const { match, mismatch, gap } = scoring;
 
-    if (error) {
-      return res.status(400).json({ message: error });
+    if (error || scoringError) {
+      return res.status(400).json({ message: error || scoringError });
     }
 
     if (!["global", "local"].includes(algorithm)) {
@@ -64,13 +58,13 @@ router.post("/align", async (req, res) => {
 
 router.post("/bruteforce-demo", (req, res) => {
   try {
-    const { seqA, seqB, error } = readSequences(req.body || {});
-    const match = parseNumber(req.body.match, 1);
-    const mismatch = parseNumber(req.body.mismatch, -1);
-    const gap = parseNumber(req.body.gap, -2);
+    const body = req.body || {};
+    const { seqA, seqB, error } = readSequences(body);
+    const { scoring, error: scoringError } = readScoring(body);
+    const { match, mismatch, gap } = scoring;
 
-    if (error) {
-      return res.status(400).json({ message: error });
+    if (error || scoringError) {
+      return res.status(400).json({ message: error || scoringError });
     }
 
     const result = bruteForceDemo(seqA, seqB, match, mismatch, gap);
