@@ -96,6 +96,28 @@ cd server && npm test
 └── scripts/                    Dev and git helper scripts used by the root package.json
 ```
 
+## API Reference
+
+All endpoints are served under `http://localhost:5000/api` and exchange JSON. Errors always come back as `{ "message": "..." }` with a 4xx/5xx status.
+
+| Method | Path | Body | Returns |
+|---|---|---|---|
+| `GET` | `/` (no `/api` prefix) | — | `{ message }` health check |
+| `POST` | `/api/align` | `seqA`, `seqB`, `algorithm` (`"global"` or `"local"`), optional `match` (default `1`), `mismatch` (`-1`), `gap` (`-2`) | `score`, `alignmentA`, `alignmentB`, `similarity`, `identity`, `dpTable`, `traceTable`, `steps`; the run is also saved to history |
+| `POST` | `/api/bruteforce-demo` | `seqA`, `seqB` (each ≤ 6 chars), optional `match`, `mismatch`, `gap` | `score`, `callCount`, `recomputations`, `recursionTree` |
+| `GET` | `/api/history` | — | The 20 most recent saved alignments, newest first |
+| `DELETE` | `/api/history/:id` | — | `{ message }`; `400` for a malformed id, `404` if not found |
+
+The API accepts sequences of up to 100 characters (`A`, `C`, `G`, `T`, `U`, case-insensitive).
+
+Example:
+
+```bash
+curl -s http://localhost:5000/api/align \
+  -H "Content-Type: application/json" \
+  -d '{"seqA":"AGTACG","seqB":"ACATCG","algorithm":"global"}'
+```
+
 ## Tab Guide (DP Concepts by View)
 
 - **Input**: Set sequences and scoring scheme; launch alignment/brute-force demos.
@@ -115,3 +137,20 @@ Input rules: sequences may only contain `A`, `C`, `G`, `T` and `U`. The UI limit
 | Space complexity | `O(n+m)` stack | `O(n*m)` table |
 | Recomputations | Many | `0` (each cell once) |
 | Practical for length ~20 | No | Yes |
+
+## Helper Scripts
+
+Run from the repository root:
+
+| Command | Script | What it does |
+|---|---|---|
+| `npm run dev` | `scripts/stop-dev-ports.js` + `concurrently` | Frees ports 5000 and 5173–5177, then starts server and client |
+| `npm run dev:parallel` | `concurrently` | Same, without freeing ports first |
+| `npm run dev:node` | `scripts/dev.js` | Starts both apps with plain Node (no `concurrently` needed) |
+| `npm run stop` | `scripts/stop-dev-ports.js` | Stops whatever is listening on those ports (uses `lsof` on macOS/Linux, `netstat`/`taskkill` on Windows) |
+| `npm run install:all` | — | `npm install` in root, client and server |
+| `npm test` | — | Runs the server test suite |
+| `npm run push -- "message"` | `scripts/autopush.js` | `git add .`, commits with the message (or a timestamp) and pushes to `origin main` |
+| — | `node scripts/setup-git.js` | Interactive one-time setup: `git init`, set `origin`, user name/email, first commit and push to `main` |
+
+> **Note:** `npm run stop` / `npm run dev` kill *any* process on those ports, not only this project. `npm run push` stages every change in the working tree and pushes straight to `main`; review `git status` first.
