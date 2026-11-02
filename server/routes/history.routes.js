@@ -12,7 +12,8 @@ router.get("/history", async (_req, res) => {
       .lean();
     return res.json(history);
   } catch (error) {
-    return res.status(500).json({ message: error.message || "Could not fetch history." });
+    console.error(error);
+    return res.status(500).json({ message: "Could not fetch history." });
   }
 });
 
@@ -30,7 +31,8 @@ router.delete("/history/:id", async (req, res) => {
 
     return res.json({ message: "Record deleted successfully." });
   } catch (error) {
-    return res.status(500).json({ message: error.message || "Could not delete record." });
+    console.error(error);
+    return res.status(500).json({ message: "Could not delete record." });
   }
 });
 

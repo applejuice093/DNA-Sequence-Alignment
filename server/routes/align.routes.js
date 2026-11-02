@@ -75,7 +75,8 @@ router.post("/align", async (req, res) => {
       saved,
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message || "Alignment failed." });
+    console.error(error);
+    return res.status(500).json({ message: "Alignment failed." });
   }
 });
 
