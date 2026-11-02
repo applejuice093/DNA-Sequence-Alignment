@@ -60,7 +60,10 @@ function CharLine({ chars }) {
 
 export default function AlignmentResult() {
   const { result, algorithm, seqA, seqB } = useAlignment();
-  const hasResult = result && typeof result.score === "number" && result.alignmentA && result.alignmentB;
+  // A local alignment can legitimately be empty (e.g. "AAA" vs "TTT" scores 0),
+  // so only the score decides whether a run has happened.
+  const hasResult = result && typeof result.score === "number";
+  const isEmptyAlignment = !result.alignmentA && !result.alignmentB;
 
   if (!hasResult) {
     return <Navigate to="/" replace />;
@@ -89,9 +92,18 @@ export default function AlignmentResult() {
       <section className="rounded-lg border border-[#2b2f45] bg-[#1e2130] p-4">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[#00ff9d]">Aligned Sequences</h2>
         <div className="overflow-x-auto rounded-md border border-[#2b2f45] bg-[#0f1117] p-3 font-mono text-lg leading-7">
-          <CharLine chars={top} />
-          <CharLine chars={middle} />
-          <CharLine chars={bottom} />
+          {isEmptyAlignment ? (
+            <p className="font-sans text-sm text-slate-400">
+              No positively scoring region was found, so the local alignment is empty. Try a higher match
+              score or sequences that share a substring.
+            </p>
+          ) : (
+            <>
+              <CharLine chars={top} />
+              <CharLine chars={middle} />
+              <CharLine chars={bottom} />
+            </>
+          )}
         </div>
       </section>
 
