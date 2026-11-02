@@ -110,3 +110,14 @@ test("POST /api/align still returns the result when history cannot be saved", as
   assert.equal(data.alignmentA.replace(/-/g, ""), "GATTACA");
   assert.equal(typeof data.score, "number");
 });
+
+test("GET /api/history answers 503 quickly when the database is offline", async () => {
+  const response = await fetch(`${baseUrl}/api/history`);
+  assert.equal(response.status, 503);
+  assert.match((await response.json()).message, /database is not connected/);
+});
+
+test("DELETE /api/history/:id with a valid id answers 503 when the database is offline", async () => {
+  const response = await fetch(`${baseUrl}/api/history/507f1f77bcf86cd799439011`, { method: "DELETE" });
+  assert.equal(response.status, 503);
+});
