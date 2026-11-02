@@ -29,7 +29,9 @@ function createApp() {
       credentials: true,
     })
   );
-  app.use(express.json());
+  // Valid requests are two sequences of at most 100 characters plus three
+  // numbers, so a small cap rejects oversized bodies before they are parsed.
+  app.use(express.json({ limit: "10kb" }));
 
   app.use("/api", alignRoutes);
   app.use("/api", historyRoutes);
@@ -48,6 +50,10 @@ function createApp() {
   app.use((error, _req, res, _next) => {
     if (error.type === "entity.parse.failed") {
       res.status(400).json({ message: "Request body is not valid JSON." });
+      return;
+    }
+    if (error.type === "entity.too.large") {
+      res.status(413).json({ message: "Request body is too large." });
       return;
     }
     const status = Number.isInteger(error.status) && error.status >= 400 ? error.status : 500;

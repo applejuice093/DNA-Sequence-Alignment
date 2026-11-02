@@ -121,3 +121,9 @@ test("DELETE /api/history/:id with a valid id answers 503 when the database is o
   const response = await fetch(`${baseUrl}/api/history/507f1f77bcf86cd799439011`, { method: "DELETE" });
   assert.equal(response.status, 503);
 });
+
+test("oversized request bodies get a JSON 413", async () => {
+  const { status, data } = await post("/api/align", { seqA: "A".repeat(20000), seqB: "C", algorithm: "global" });
+  assert.equal(status, 413);
+  assert.equal(data.message, "Request body is too large.");
+});
