@@ -124,3 +124,43 @@ test("bruteForceDemo rejects sequences above the demo limit", () => {
   const tooLong = "A".repeat(MAX_BRUTE_FORCE_LENGTH + 1);
   assert.throws(() => bruteForceDemo(tooLong, "A", ...SCHEME), /up to length/);
 });
+
+// Deterministic pseudo-random sequences so failures are reproducible.
+function makeRng(seed) {
+  let state = seed;
+  return () => {
+    state = (state * 1103515245 + 12345) % 2147483648;
+    return state / 2147483648;
+  };
+}
+
+function randomSeq(rng, maxLength) {
+  const length = 1 + Math.floor(rng() * maxLength);
+  return Array.from({ length }, () => "ACGT"[Math.floor(rng() * 4)]).join("");
+}
+
+test("alignGlobal agrees with brute force on random short sequences", () => {
+  const rng = makeRng(42);
+  for (let trial = 0; trial < 40; trial += 1) {
+    const a = randomSeq(rng, 5);
+    const b = randomSeq(rng, 5);
+    const global = alignGlobal(a, b, 2, -1, -2);
+    const brute = bruteForceDemo(a, b, 2, -1, -2);
+    assert.equal(global.score, brute.score, `${a} vs ${b}`);
+    assert.equal(scoreAlignment(global.alignmentA, global.alignmentB, 2, -1, -2), global.score);
+  }
+});
+
+test("alignLocal's alignment scores exactly its reported score", () => {
+  const rng = makeRng(7);
+  for (let trial = 0; trial < 40; trial += 1) {
+    const a = randomSeq(rng, 12);
+    const b = randomSeq(rng, 12);
+    const local = alignLocal(a, b, 1, -1, -2);
+    assert.ok(local.score >= 0);
+    assert.equal(scoreAlignment(local.alignmentA, local.alignmentB, 1, -1, -2), local.score, `${a} vs ${b}`);
+    // The aligned pieces must be substrings of the inputs once gaps are removed.
+    assert.ok(a.includes(local.alignmentA.replace(/-/g, "")));
+    assert.ok(b.includes(local.alignmentB.replace(/-/g, "")));
+  }
+});
