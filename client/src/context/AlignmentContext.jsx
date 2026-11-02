@@ -53,6 +53,7 @@ export function AlignmentProvider({ children }) {
         steps: data.steps || [],
         similarity: data.similarity ?? 0,
         identity: data.identity ?? 0,
+        saved: data.saved !== false,
       });
       return data;
     } catch (err) {

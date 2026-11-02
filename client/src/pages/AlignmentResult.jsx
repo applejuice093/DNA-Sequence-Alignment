@@ -83,6 +83,12 @@ export default function AlignmentResult() {
       transition={{ duration: 0.3 }}
       className="space-y-4"
     >
+      {result.saved === false ? (
+        <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+          This run was not saved to History because the database is offline.
+        </p>
+      ) : null}
+
       <div className="grid gap-3 md:grid-cols-3">
         <MetricCard label="Alignment Score" value={result.score} />
         <MetricCard label="Similarity" value={similarity} suffix="%" />
