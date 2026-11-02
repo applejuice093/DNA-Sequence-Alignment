@@ -101,3 +101,29 @@ test("requests from non-local origins are refused with 403", async () => {
   const response = await fetch(`${baseUrl}/`, { headers: { Origin: "https://example.com" } });
   assert.equal(response.status, 403);
 });
+
+test("POST /api/align still returns the result when history cannot be saved", async () => {
+  // No MongoDB connection in tests, so the history write is skipped.
+  const { status, data } = await post("/api/align", { seqA: "GATTACA", seqB: "GCATGCU", algorithm: "global" });
+  assert.equal(status, 200);
+  assert.equal(data.saved, false);
+  assert.equal(data.alignmentA.replace(/-/g, ""), "GATTACA");
+  assert.equal(typeof data.score, "number");
+});
+
+test("GET /api/history answers 503 quickly when the database is offline", async () => {
+  const response = await fetch(`${baseUrl}/api/history`);
+  assert.equal(response.status, 503);
+  assert.match((await response.json()).message, /database is not connected/);
+});
+
+test("DELETE /api/history/:id with a valid id answers 503 when the database is offline", async () => {
+  const response = await fetch(`${baseUrl}/api/history/507f1f77bcf86cd799439011`, { method: "DELETE" });
+  assert.equal(response.status, 503);
+});
+
+test("oversized request bodies get a JSON 413", async () => {
+  const { status, data } = await post("/api/align", { seqA: "A".repeat(20000), seqB: "C", algorithm: "global" });
+  assert.equal(status, 413);
+  assert.equal(data.message, "Request body is too large.");
+});

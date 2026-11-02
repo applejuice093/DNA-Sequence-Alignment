@@ -103,10 +103,10 @@ All endpoints are served under `http://localhost:5000/api` and exchange JSON. Er
 | Method | Path | Body | Returns |
 |---|---|---|---|
 | `GET` | `/` (no `/api` prefix) | — | `{ message }` health check |
-| `POST` | `/api/align` | `seqA`, `seqB`, `algorithm` (`"global"` or `"local"`), optional `match` (default `1`), `mismatch` (`-1`), `gap` (`-2`) | `score`, `alignmentA`, `alignmentB`, `similarity`, `identity`, `dpTable`, `traceTable`, `steps`; the run is also saved to history |
+| `POST` | `/api/align` | `seqA`, `seqB`, `algorithm` (`"global"` or `"local"`), optional `match` (default `1`), `mismatch` (`-1`), `gap` (`-2`) | `score`, `alignmentA`, `alignmentB`, `similarity`, `identity`, `dpTable`, `traceTable`, `steps`, `saved` (whether the run made it into history; `false` when MongoDB is offline) |
 | `POST` | `/api/bruteforce-demo` | `seqA`, `seqB` (each ≤ 6 chars), optional `match`, `mismatch`, `gap` | `score`, `callCount`, `recomputations`, `recursionTree` |
-| `GET` | `/api/history` | — | The 20 most recent saved alignments, newest first |
-| `DELETE` | `/api/history/:id` | — | `{ message }`; `400` for a malformed id, `404` if not found |
+| `GET` | `/api/history` | optional `?limit=` (1–100, default 20) | The most recent saved alignments, newest first; `503` if MongoDB is not connected |
+| `DELETE` | `/api/history/:id` | — | `{ message }`; `400` for a malformed id, `404` if not found, `503` if MongoDB is not connected |
 
 The API accepts sequences of up to 100 characters (`A`, `C`, `G`, `T`, `U`, case-insensitive).
 
@@ -127,7 +127,9 @@ curl -s http://localhost:5000/api/align \
 - **Traceback**: Follow reverse path through `traceTable` to build final alignment.
 - **History**: Review, re-run, and delete recent persisted alignments.
 
-Input rules: sequences may only contain `A`, `C`, `G`, `T` and `U`. The UI limits them to 20 characters (6 for the brute-force demo).
+Input rules: sequences may only contain `A`, `C`, `G`, `T` and `U`. The UI limits them to 20 characters (6 for the brute-force demo); the API accepts up to 100. Scores must be between -100 and 100, and `gap` must be zero or negative because it is a penalty. Request bodies are capped at 10 kB.
+
+Alignment still works when MongoDB is down: results are returned with `saved: false`, and only the History tab is unavailable.
 
 ## Complexity Analysis
 
