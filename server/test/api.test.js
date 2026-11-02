@@ -101,3 +101,12 @@ test("requests from non-local origins are refused with 403", async () => {
   const response = await fetch(`${baseUrl}/`, { headers: { Origin: "https://example.com" } });
   assert.equal(response.status, 403);
 });
+
+test("POST /api/align still returns the result when history cannot be saved", async () => {
+  // No MongoDB connection in tests, so the history write is skipped.
+  const { status, data } = await post("/api/align", { seqA: "GATTACA", seqB: "GCATGCU", algorithm: "global" });
+  assert.equal(status, 200);
+  assert.equal(data.saved, false);
+  assert.equal(data.alignmentA.replace(/-/g, ""), "GATTACA");
+  assert.equal(typeof data.score, "number");
+});

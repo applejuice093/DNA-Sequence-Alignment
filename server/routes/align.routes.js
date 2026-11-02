@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const Alignment = require("../models/alignment.model");
 const { alignGlobal } = require("../algorithms/needlemanWunsch");
 const { alignLocal } = require("../algorithms/smithWaterman");
@@ -6,6 +7,27 @@ const { bruteForceDemo } = require("../algorithms/bruteForce");
 const { readSequences, readScoring } = require("./validation");
 
 const router = express.Router();
+
+/**
+ * Store a finished alignment in the history collection.
+ *
+ * History is a convenience, so a database outage must not cost the user their
+ * result: when MongoDB is not connected we skip the write immediately (instead
+ * of letting Mongoose buffer it for 10 s), and a failed write is logged.
+ * @returns {Promise<boolean>} whether the record was saved
+ */
+async function saveToHistory(record) {
+  if (mongoose.connection.readyState !== 1) {
+    return false;
+  }
+  try {
+    await Alignment.create(record);
+    return true;
+  } catch (error) {
+    console.error("Could not save alignment to history:", error.message);
+    return false;
+  }
+}
 
 router.post("/align", async (req, res) => {
   try {
@@ -28,7 +50,7 @@ router.post("/align", async (req, res) => {
         ? alignGlobal(seqA, seqB, match, mismatch, gap)
         : alignLocal(seqA, seqB, match, mismatch, gap);
 
-    await Alignment.create({
+    const saved = await saveToHistory({
       seqA,
       seqB,
       algorithm,
@@ -50,6 +72,7 @@ router.post("/align", async (req, res) => {
       mismatch,
       gap,
       ...result,
+      saved,
     });
   } catch (error) {
     return res.status(500).json({ message: error.message || "Alignment failed." });
